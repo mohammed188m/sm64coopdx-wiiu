@@ -12,9 +12,21 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Fix devkitPro CDN 403 (Cloudflare WAF workaround)
         run: |
-          dkp-pacman -Syy --noconfirm
+          PACMAN_CONF=$(find /opt/devkitpro -name "pacman.conf" 2>/dev/null | head -n1)
+          if [ -z "$PACMAN_CONF" ]; then PACMAN_CONF="/etc/pacman.conf"; fi
+          echo "Using pacman.conf at: $PACMAN_CONF"
+          sed -i '/^\[options\]/a XferCommand = /usr/bin/curl -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -L -C - -f -o %o %u' "$PACMAN_CONF"
+          cat "$PACMAN_CONF" | grep XferCommand
+
+      - name: Install Dependencies (with retry)
+        run: |
+          for i in 1 2 3 4 5; do
+            dkp-pacman -Syy --noconfirm && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
           dkp-pacman -S --noconfirm wiiu-portlibs wiiu-sdl2 wut-tools wut
           apt-get update && apt-get install -y python3 build-essential git
 

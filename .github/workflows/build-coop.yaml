@@ -12,9 +12,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Wii U Libraries & Dependencies
+      - name: Fix devkitPro Keys and Install Dependencies
         run: |
-          dkp-pacman -Sy --noconfirm wiiu-portlibs wiiu-sdl2 wut-tools wut
+          dkp-key --populate
+          dkp-pacman -Syy --noconfirm
+          dkp-pacman -S --noconfirm wiiu-portlibs wiiu-sdl2 wut-tools wut
           apt-get update && apt-get install -y python3 build-essential git
 
       - name: Build RPX

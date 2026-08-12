@@ -1,0 +1,34 @@
+name: Build SM64 Coop DX for Wii U
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-wiiu:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitppc:latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Cache devkitPro Packages
+        id: cache-dkp
+        uses: actions/cache@v4
+        with:
+          path: /opt/devkitpro/portlibs/wiiu
+          key: ${{ runner.os }}-wiiu-portlibs-v1
+
+      - name: Install System Dependencies
+        run: |
+          apt-get update && apt-get install -y python3 build-essential git
+
+      - name: Build RPX
+        run: |
+          make TARGET_WIIU=1 WIIU=1 -j$(nproc)
+
+      - name: Upload RPX Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sm64coopdx-wiiu-build
+          path: build/us_wiiu/sm64.us.f3dex2e.rpx
